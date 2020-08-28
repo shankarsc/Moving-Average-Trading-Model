@@ -175,11 +175,11 @@ def portfolio_backtest(dataset, signals, initial_capital, asset_quantity):
     # Returns the number of days since the current signal was activated
     if ([signals['Trade Signal']==1.0]):
         print(
-            'Number of days since long signal activated: ' + str(portfolio.index.max()-strat_rets.index[signals['Trade Signal']==0.0].max())
+            'Number of days since long signal activated: ' + str(portfolio.index.max()-portfolio.index[signals['Trade Signal']==0.0].max())
         )
     else:
         print(
-            'Number of days since short signal activated: ' + str(portfolio.index.max()-strat_rets.index[signals['Trade Signal']==1.0].max())
+            'Number of days since short signal activated: ' + str(portfolio.index.max()-portfolio.index[signals['Trade Signal']==1.0].max())
         )
         
     return portfolio
