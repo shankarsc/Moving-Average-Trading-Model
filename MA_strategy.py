@@ -87,10 +87,10 @@ def plot_signals(dataset, signals, title):
     signals[['Short Window MA', 'Long Window MA']].plot(ax=ax1, lw=2)
 
     # Plot the buy signals
-    ax1.plot(signals.loc[signals['Positions']==1.0].index, signals['Short Window MA'][signals['Positions']==1], '^', markersize=10, color='g')
+    ax1.plot(signals.loc[signals['Positions']==1.0].index, signals['Short Window MA'][signals['Positions']==1], '^', markersize=10, color='m')
 
     # Plot the sell signals
-    ax1.plot(signals.loc[signals['Positions']==-1.0].index, signals['Long Window MA'][signals['Positions']==-1], 'v', markersize=10, color='r')
+    ax1.plot(signals.loc[signals['Positions']==-1.0].index, signals['Long Window MA'][signals['Positions']==-1], 'v', markersize=10, color='k')
     
     # Plot details
     plt.grid()
@@ -112,7 +112,7 @@ def portfolio_backtest(dataset, signals, initial_capital, asset_quantity):
     Figure displaying portfolio performance as a results of the trading strategy
     relative to Buy & Hold strategy
     """
-    # Create a DataFrame 'positions
+    # Create a DataFrame 'positions'
     positions = pd.DataFrame(index=signals.index).fillna(0.0)
 
     # Position in chosen asset. If non-zero, means asset has been purchased (Long)
@@ -146,24 +146,42 @@ def portfolio_backtest(dataset, signals, initial_capital, asset_quantity):
     (dataset['Price']*asset_quantity).plot(ax=ax1)
 
     # Plotting the buy signals
-    ax1.plot(portfolio.loc[signals['Positions']==1.0].index, portfolio['Total Value ($)'][signals['Positions']==1.0], '^', markersize=10,         color='m')
+    ax1.plot(portfolio.loc[signals['Positions']==1.0].index, portfolio['Total Value ($)'][signals['Positions']==1.0], '^', markersize=10, color='m')
 
     # Plotting the sell signals
-    ax1.plot(portfolio.loc[signals['Positions']==-1.0].index, portfolio['Total Value ($)'][signals['Positions']==-1.0], 'v', markersize=10,       color='k')
+    ax1.plot(portfolio.loc[signals['Positions']==-1.0].index, portfolio['Total Value ($)'][signals['Positions']==-1.0], 'v', markersize=10, color='k')
 
     # Plot details
     ax1.legend(['Trading Strategy', 'Buy & Hold Strategy', 'Buy Signal', 'Sell Signal'])
     plt.show()
 
-    # Profitability of the strategy as of the present date
+    # Profitability of the strategy over the Buy & Hold strategy as of the present date
     print('Profit over Buy & Hold strategy as of ' + str(portfolio.index[-1]) + ': $' + str(round(portfolio['Cash Leftover ($)'].iloc[-1])))
     
+    # Returns profitability over the Buy & Hold strategy in terms of percentage
     print('Percentage-wise: ' + 
          str(round(100*portfolio['Cash Leftover ($)'].iloc[-1]/(portfolio['Total Value ($)'].iloc[-1]-portfolio['Cash Leftover ($)'].iloc[-1]), 2)) 
          + '%.')
     
+    # Returns the total portfolio value from the strategy itself
     print('Total portfolio value as of ' + str(portfolio.index[-1]) + ': $' +  str(round(portfolio['Total Value ($)'].iloc[-1])))
 
+    # Returns the average number of days with 'long' signal activated
+    print(
+        'Average number of days with long signal: ' 
+        + str((signals['Trade Signal']==1.0).sum()/len(portfolio['Total Value ($)'][signals['Positions']==1.0]))
+    )
+
+    # Returns the number of days since the current signal was activated
+    if ([signals['Trade Signal']==1.0]):
+        print(
+            'Number of days since long signal activated: ' + str(portfolio.index.max()-strat_rets.index[signals['Trade Signal']==0.0].max())
+        )
+    else:
+        print(
+            'Number of days since short signal activated: ' + str(portfolio.index.max()-strat_rets.index[signals['Trade Signal']==1.0].max())
+        )
+        
     return portfolio
 
 def annul_sharpe_ratio(portfolio_returns):
@@ -184,18 +202,18 @@ def drawdown(dataset):
     Measures the largest single drop from peak to bottom in the value of a portfolio
     
     Parameters:
-    dataset - Historical data of asset prices
+    dataset - Historical data of portfolio total value
 
     Returns:
-    Plot of daily and maximum daily drawdown of the asset prices
+    Plot of daily and maximum daily drawdown of the portfolio value
     """
 
     # Define a trailing 365 trading day window
     window=365
 
     # Calculate the max drawdown in the past window days for each day
-    rolling_max = dataset['Price'].rolling(window, min_periods=1).max()
-    daily_drawdown = dataset['Price']/rolling_max - 1
+    rolling_max = dataset.rolling(window, min_periods=1).max()
+    daily_drawdown = dataset/rolling_max - 1
 
     # Calculate the minimum (negative) daily drawdown 
     max_daily_drawdown = daily_drawdown.rolling(window, min_periods=1).min()
